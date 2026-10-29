@@ -17,53 +17,6 @@ st.set_page_config(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Title and description
-st.title("⚖️ Legal Research Assistant")
-st.markdown("Chat with an AI assistant that retrieves and cites relevant legal cases.")
-
-# Sidebar configuration
-st.sidebar.header("Configuration")
-st.sidebar.info(f"**Model:** {OLLAMA_MODEL}\n**Dataset:** Indian Supreme Court")
-
-# Top-K configuration in sidebar
-k = st.sidebar.number_input("Top K chunks to retrieve", min_value=1, max_value=20, value=5, 
-                             help="Number of relevant case chunks to retrieve for legal queries")
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("### About")
-st.sidebar.markdown("""
-This RAG system:
-- Retrieves similar past judgments
-- Generates answers with citations
-- Only uses retrieved case data
-
-**Tips:**
-- Ask legal questions for case retrieval
-- Greetings and casual messages get conversational responses
-""")
-
-# Clear chat button
-if st.sidebar.button("🗑️ Clear Chat History"):
-    st.session_state.messages = []
-    st.rerun()
-
-st.sidebar.markdown("---")
-
-# Download conversation button (shown only if there's at least one answer)
-has_answers = any(msg["role"] == "assistant" for msg in st.session_state.messages)
-if has_answers:
-    if st.sidebar.button("📥 Download Conversation"):
-        markdown_export = export_conversation_markdown(st.session_state.messages)
-        st.sidebar.download_button(
-            label="⬇️ Download Markdown",
-            data=markdown_export,
-            file_name=f"legal_research_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
-            mime="text/markdown"
-        )
-
-st.sidebar.markdown("---")
-st.sidebar.caption(f"💬 {len(st.session_state.messages)} messages in history")
-
 
 def export_conversation_markdown(messages):
     """
@@ -143,7 +96,7 @@ def export_conversation_markdown(messages):
             
             markdown += "---\n\n"
         else:
-            # Assistant message without preceding user message (shouldn't happen normally)
+            # Assistant message without preceding user message
             i += 1
     
     # Footer
@@ -164,6 +117,54 @@ For research and educational purposes only. Always consult qualified legal profe
 """
     
     return markdown
+
+
+# Title and description
+st.title("⚖️ Legal Research Assistant")
+st.markdown("Chat with an AI assistant that retrieves and cites relevant legal cases.")
+
+# Sidebar configuration
+st.sidebar.header("Configuration")
+st.sidebar.info(f"**Model:** {OLLAMA_MODEL}\n**Dataset:** Indian Supreme Court")
+
+# Top-K configuration in sidebar
+k = st.sidebar.number_input("Top K chunks to retrieve", min_value=1, max_value=20, value=5, 
+                             help="Number of relevant case chunks to retrieve for legal queries")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### About")
+st.sidebar.markdown("""
+This RAG system:
+- Retrieves similar past judgments
+- Generates answers with citations
+- Only uses retrieved case data
+
+**Tips:**
+- Ask legal questions for case retrieval
+- Greetings and casual messages get conversational responses
+""")
+
+# Clear chat button
+if st.sidebar.button("🗑️ Clear Chat History"):
+    st.session_state.messages = []
+    st.rerun()
+
+st.sidebar.markdown("---")
+
+# Download conversation button (shown only if there's at least one answer)
+has_answers = any(msg["role"] == "assistant" for msg in st.session_state.messages)
+if has_answers:
+    if st.sidebar.button("📥 Download Conversation"):
+        markdown_export = export_conversation_markdown(st.session_state.messages)
+        st.sidebar.download_button(
+            label="⬇️ Download Markdown",
+            data=markdown_export,
+            file_name=f"legal_research_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
+            mime="text/markdown"
+        )
+
+st.sidebar.markdown("---")
+st.sidebar.caption(f"💬 {len(st.session_state.messages)} messages in history")
 
 
 # Display chat messages
