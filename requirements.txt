@@ -4,3 +4,4 @@ sentence-transformers==2.2.2
 ollama==0.4.4
 streamlit==1.32.0
 torch==2.2.0
+reportlab==5.1.0

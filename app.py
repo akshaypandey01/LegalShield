@@ -4,6 +4,12 @@ Streamlit chat interface for the Legal Research RAG system.
 
 import streamlit as st
 from datetime import datetime
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from rag import generate, OLLAMA_MODEL, OLLAMA_HOST
 
 # Page configuration
@@ -18,29 +24,95 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 
-def export_conversation_markdown(messages):
+def export_conversation_pdf(messages):
     """
-    Export conversation to Markdown format.
+    Export conversation to PDF format.
     
     Args:
         messages: List of chat messages with optional sources
         
     Returns:
-        Markdown-formatted string
+        BytesIO buffer containing PDF data
     """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
+                           rightMargin=0.75*inch, leftMargin=0.75*inch,
+                           topMargin=0.75*inch, bottomMargin=0.75*inch)
+    
+    # Container for PDF elements
+    story = []
+    
+    # Define styles
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor='#1f1f1f',
+        spaceAfter=12,
+        alignment=TA_CENTER
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor='#2c3e50',
+        spaceAfter=10,
+        spaceBefore=12
+    )
+    
+    subheading_style = ParagraphStyle(
+        'CustomSubHeading',
+        parent=styles['Heading3'],
+        fontSize=11,
+        textColor='#34495e',
+        spaceAfter=6,
+        spaceBefore=8,
+        fontName='Helvetica-Bold'
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor='#333333',
+        spaceAfter=8,
+        leading=14
+    )
+    
+    source_style = ParagraphStyle(
+        'SourceStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor='#555555',
+        leftIndent=20,
+        spaceAfter=6,
+        leading=12
+    )
+    
+    meta_style = ParagraphStyle(
+        'MetaStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor='#666666',
+        spaceAfter=4
+    )
+    
+    # Title
+    story.append(Paragraph("Legal Research Assistant", title_style))
+    story.append(Paragraph("Conversation Export", title_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Metadata
     export_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    story.append(Paragraph(f"<b>Export Date:</b> {export_time}", meta_style))
+    story.append(Paragraph(f"<b>Model:</b> {OLLAMA_MODEL}", meta_style))
+    story.append(Paragraph(f"<b>Dataset:</b> Indian Supreme Court Cases (overthelex/indian-court-decisions)", meta_style))
+    story.append(Spacer(1, 0.3*inch))
     
-    markdown = f"""# Legal Research Assistant - Conversation Export
-
-**Export Date:** {export_time}  
-**Model:** {OLLAMA_MODEL}  
-**Dataset:** Indian Supreme Court Cases (overthelex/indian-court-decisions)
-
----
-
-"""
-    
-    # Group messages into Q&A exchanges
+    # Process messages into Q&A exchanges
     i = 0
     exchange_num = 0
     while i < len(messages):
@@ -56,19 +128,33 @@ def export_conversation_markdown(messages):
             if i + 1 < len(messages) and messages[i + 1]["role"] == "assistant":
                 answer = messages[i + 1]["content"]
                 sources = messages[i + 1].get("sources", [])
-                i += 2  # Skip both user and assistant message
+                i += 2
             else:
                 i += 1
             
-            # Write exchange
-            markdown += f"## Exchange {exchange_num}\n\n"
-            markdown += f"**Question:**  \n{question}\n\n"
+            # Add exchange header
+            story.append(Paragraph(f"Exchange {exchange_num}", heading_style))
             
+            # Add question
+            story.append(Paragraph("<b>Question:</b>", subheading_style))
+            # Escape HTML special characters
+            question_escaped = question.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            story.append(Paragraph(question_escaped, normal_style))
+            story.append(Spacer(1, 0.1*inch))
+            
+            # Add answer
             if answer:
-                markdown += f"**Answer:**  \n{answer}\n\n"
+                story.append(Paragraph("<b>Answer:</b>", subheading_style))
+                answer_escaped = answer.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                # Replace newlines with line breaks for PDF
+                answer_escaped = answer_escaped.replace('\n\n', '<br/><br/>').replace('\n', '<br/>')
+                story.append(Paragraph(answer_escaped, normal_style))
+                story.append(Spacer(1, 0.1*inch))
                 
+                # Add sources
                 if sources:
-                    markdown += f"**Sources ({len(sources)} excerpts):**\n\n"
+                    story.append(Paragraph(f"<b>Sources ({len(sources)} excerpts):</b>", subheading_style))
+                    
                     for j, source in enumerate(sources, 1):
                         # Use same cleaned case labels as the app
                         case_display = source.get('case_name_display', source['case_name'])
@@ -78,45 +164,46 @@ def export_conversation_markdown(messages):
                         outcome = source.get('disposal_nature', '')
                         
                         # Source header
-                        markdown += f"**[{ref_num}] {case_display}**"
+                        source_header = f"<b>[{ref_num}] {case_display}</b>"
                         if cnr:
-                            markdown += f" (CNR: {cnr})"
-                        markdown += f"  \n*Chunk {chunk_num}*"
+                            source_header += f" (CNR: {cnr})"
+                        source_header += f" • Chunk {chunk_num}"
                         if outcome and outcome != 'Not specified':
-                            markdown += f" • Outcome: {outcome}"
-                        markdown += "\n\n"
+                            source_header += f" • Outcome: {outcome}"
                         
-                        # Excerpt (first 400 chars)
-                        excerpt = source["text"][:400]
-                        if len(source["text"]) > 400:
+                        story.append(Paragraph(source_header, source_style))
+                        
+                        # Excerpt (first 300 chars for PDF)
+                        excerpt = source["text"][:300]
+                        if len(source["text"]) > 300:
                             excerpt += "..."
-                        markdown += f"> {excerpt}\n\n"
-                    
-                    markdown += "\n"
+                        excerpt_escaped = excerpt.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                        story.append(Paragraph(f"<i>{excerpt_escaped}</i>", source_style))
+                        story.append(Spacer(1, 0.05*inch))
             
-            markdown += "---\n\n"
+            # Separator between exchanges
+            story.append(Spacer(1, 0.2*inch))
         else:
-            # Assistant message without preceding user message
             i += 1
     
-    # Footer
-    markdown += f"""
----
-
-## Disclaimer
-
-**AI-generated research aid based only on retrieved excerpts. Not legal advice. Verify all citations against the original judgments.**
-
-This export was generated by the Legal Research Assistant RAG system using:
-- Local LLM: {OLLAMA_MODEL}
-- Vector Database: ChromaDB
-- Embeddings: sentence-transformers/all-MiniLM-L6-v2
-- Dataset: Indian Supreme Court Cases (CC-BY-4.0 License)
-
-For research and educational purposes only. Always consult qualified legal professionals for legal matters.
-"""
+    # Footer/Disclaimer
+    story.append(Spacer(1, 0.3*inch))
+    story.append(Paragraph("<b>Disclaimer</b>", heading_style))
+    disclaimer_text = """<b>AI-generated research aid based only on retrieved excerpts. Not legal advice. 
+    Verify all citations against the original judgments.</b><br/><br/>
+    This export was generated by the Legal Research Assistant RAG system using:<br/>
+    • Local LLM: {}<br/>
+    • Vector Database: ChromaDB<br/>
+    • Embeddings: sentence-transformers/all-MiniLM-L6-v2<br/>
+    • Dataset: Indian Supreme Court Cases (CC-BY-4.0 License)<br/><br/>
+    For research and educational purposes only. Always consult qualified legal professionals for legal matters.""".format(OLLAMA_MODEL)
     
-    return markdown
+    story.append(Paragraph(disclaimer_text, normal_style))
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
 
 
 # Title and description
@@ -154,14 +241,14 @@ st.sidebar.markdown("---")
 # Download conversation button (shown only if there's at least one answer)
 has_answers = any(msg["role"] == "assistant" for msg in st.session_state.messages)
 if has_answers:
-    if st.sidebar.button("📥 Download Conversation"):
-        markdown_export = export_conversation_markdown(st.session_state.messages)
-        st.sidebar.download_button(
-            label="⬇️ Download Markdown",
-            data=markdown_export,
-            file_name=f"legal_research_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
-            mime="text/markdown"
-        )
+    pdf_buffer = export_conversation_pdf(st.session_state.messages)
+    st.sidebar.download_button(
+        label="📥 Download Conversation (PDF)",
+        data=pdf_buffer,
+        file_name=f"legal_research_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+        mime="application/pdf",
+        help="Download conversation as a PDF file"
+    )
 
 st.sidebar.markdown("---")
 st.sidebar.caption(f"💬 {len(st.session_state.messages)} messages in history")
