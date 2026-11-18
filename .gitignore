@@ -8,10 +8,6 @@ venv/
 env/
 ENV/
 
-# Data files (too large for git)
-data/
-chroma_db/
-
 # Hugging Face cache
 D:/huggingface_cache/
 

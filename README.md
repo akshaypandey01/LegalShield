@@ -8,6 +8,7 @@ A production-ready Retrieval-Augmented Generation (RAG) system for legal researc
 
 ## ✨ Features
 
+### Core Capabilities
 - 📚 **300 Indian Supreme Court cases** (1950-1966) with quality filtering
 - 🔍 **Smart retrieval** with diversity filtering (max 2 chunks per case)
 - 🤖 **Local LLM** using Ollama (phi3:mini) - no cloud dependencies
@@ -17,6 +18,16 @@ A production-ready Retrieval-Augmented Generation (RAG) system for legal researc
 - 📝 **Precise citations** with consistent [1], [2] reference numbering
 - 🔬 **Quality controls**: Min 120 words per chunk, tail chunk filtering
 - 🌐 **Streamlit web UI** with message history and source viewing
+
+### 🆕 Enhanced Query Capabilities
+- **📄 Case Summarization**: Generate structured summaries of specific cases by ID or name (Facts, Issues, Holding, Reasoning, Outcome)
+- **🔍 Similarity Search**: Find cases similar to a given case based on legal content and semantic similarity
+- **🎯 Metadata Filtering**: Filter cases by outcome (Appeal allowed/dismissed, Petition allowed/dismissed)
+- **📚 Full Case Retrieval**: Get all chunks from a specific case for comprehensive analysis
+- **💬 Multi-Mode UI**: Chat, summarize, similarity search, and advanced search modes
+- **⚖️ Outcome Analysis**: Query and filter by case dispositions
+
+**📖 See [ENHANCED_FEATURES.md](ENHANCED_FEATURES.md) for complete documentation of new features.**
 
 ## 🚀 Quick Start
 
@@ -93,8 +104,9 @@ Display with Sources
 
 ## 🎯 Usage Examples
 
-### Legal Queries
+### Chat Mode (Default)
 
+**Legal Queries:**
 ```
 Q: What are the grounds for granting special leave to appeal?
 → Retrieves relevant cases, generates answer with citations
@@ -106,14 +118,45 @@ Q: How does the court interpret Article 14 equality?
 → Finds cases discussing constitutional equality
 ```
 
-### Casual Chat
-
+**Casual Chat:**
 ```
 Q: Hello
 → "Hello! I'm your legal research assistant..."
 
 Q: Thank you
 → "You're welcome! Feel free to ask..."
+```
+
+### 📄 Summarize Case Mode
+
+```
+Input: SC_0001
+→ Generates structured summary with:
+  - Facts (parties, events, lower court decisions)
+  - Legal Issues (questions addressed)
+  - Holding (court's decision)
+  - Reasoning (why the court decided this way)
+  - Outcome (final disposition)
+```
+
+### 🔍 Find Similar Cases Mode
+
+```
+Input: SC_0025
+→ Returns 5 cases with similar:
+  - Legal issues
+  - Fact patterns
+  - Judicial reasoning
+  - With relevance scores and excerpts
+```
+
+### 🎯 Advanced Search Mode
+
+```
+Query: "grounds for appeal"
+Filter: Appeal allowed
+→ Returns only cases where appeals were allowed
+  with relevant citations
 ```
 
 ## 🔧 Configuration
@@ -181,6 +224,9 @@ python test_conversational.py
 
 # Test quality improvements
 python test_improvements.py
+
+# 🆕 Test enhanced features (summarization, similarity, filtering)
+python test_enhanced_rag.py
 ```
 
 ## 📈 Quality Improvements
