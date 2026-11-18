@@ -6,8 +6,8 @@ This guide will help your teammates get the RAG Legal AI application running on 
 
 - Python 3.8 or higher ([Download Python](https://www.python.org/downloads/))
 - Git installed ([Download Git](https://git-scm.com/downloads))
-- A Google API key for Gemini (get it from [Google AI Studio](https://makersuite.google.com/app/apikey))
-- Stable internet connection
+- **Ollama installed and running** ([Download Ollama](https://ollama.com/download))
+- Stable internet connection (for initial setup only)
 
 ## Setup Steps
 
@@ -45,28 +45,27 @@ This will install all required packages including:
 - Gradio
 - and other dependencies
 
-### 4. Set Up Your Google API Key
+### 4. Install and Setup Ollama
 
-You need a Google API key to use the Gemini model. 
+**Ollama** is the local LLM engine that powers this application.
 
-**Option A: Environment Variable (Recommended)**
+1. **Download and install Ollama:**
+   - Visit [https://ollama.com/download](https://ollama.com/download)
+   - Download for your operating system (Windows/Mac/Linux)
+   - Run the installer
 
-**On Windows (PowerShell):**
-```powershell
-$env:GOOGLE_API_KEY = "your-api-key-here"
-```
+2. **Pull the required model:**
+   ```bash
+   ollama pull phi3:mini
+   ```
 
-**On macOS/Linux:**
-```bash
-export GOOGLE_API_KEY="your-api-key-here"
-```
+3. **Verify Ollama is running:**
+   ```bash
+   ollama list
+   ```
+   You should see `phi3:mini` in the list.
 
-**Option B: Create a .env file**
-
-Create a file named `.env` in the project root:
-```
-GOOGLE_API_KEY=your-api-key-here
-```
+**Note:** Ollama runs as a local service on `http://localhost:11434`. No API keys needed!
 
 ### 5. Run the Application
 
@@ -85,7 +84,8 @@ Open your browser and navigate to `http://localhost:7860`
 
 ✅ **300 Legal Case Files** - All source documents are in the `data/` folder  
 ✅ **Pre-built Vector Database** - The `chroma_db/` folder contains the indexed documents  
-✅ **No Need to Run `ingest.py`** - Database is ready to use!
+✅ **No Need to Run `ingest.py`** - Database is ready to use!  
+✅ **100% Local & Private** - All processing happens on your machine (no cloud APIs)
 
 This means you can skip the ingestion step and start querying immediately after setup.
 
@@ -103,23 +103,32 @@ Try these sample queries:
 - 📊 **Citation Extraction** - Automatic identification of legal citations
 - 📁 **Export Results** - Save conversations as Markdown or PDF
 - 🎯 **Entity Recognition** - Extract legal entities, dates, and case names
+- 🔒 **100% Local & Private** - All AI processing runs on your machine (Ollama)
+- ⚡ **No API Costs** - Completely free to run locally
 
 ## Troubleshooting
 
 ### Issue: "ModuleNotFoundError"
 **Solution:** Make sure you activated the virtual environment and ran `pip install -r requirements.txt`
 
-### Issue: "Google API Key not found"
-**Solution:** Verify your GOOGLE_API_KEY environment variable is set correctly
+### Issue: "Connection refused" or "Cannot connect to Ollama"
+**Solution:** 
+1. Make sure Ollama is installed and running
+2. Check if the service is active: `ollama list`
+3. Try restarting Ollama
+4. Verify it's running on `http://localhost:11434`
+
+### Issue: "Model not found: phi3:mini"
+**Solution:** Pull the model first: `ollama pull phi3:mini`
 
 ### Issue: "Port 7860 already in use"
-**Solution:** Stop any other Gradio applications or change the port in `app.py`:
-```python
-demo.launch(server_port=7861)  # Use a different port
-```
+**Solution:** Stop any other Gradio/Streamlit applications or change the port in `app.py`
 
 ### Issue: Slow responses
-**Solution:** This is normal for the first query. Subsequent queries will be faster due to caching.
+**Solution:** 
+- First query is slower while Ollama loads the model into memory
+- Subsequent queries will be much faster
+- Make sure you have at least 4GB of free RAM for the model
 
 ## Project Structure
 
