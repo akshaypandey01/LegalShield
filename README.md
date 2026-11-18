@@ -31,7 +31,14 @@ A production-ready Retrieval-Augmented Generation (RAG) system for legal researc
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### For Kiro IDE Users (Fastest!)
+Using Kiro IDE? Just paste this prompt and let Kiro set everything up automatically:
+
+👉 **[See KIRO_SETUP_PROMPT.md](KIRO_SETUP_PROMPT.md)** for the ready-to-use setup prompt!
+
+### Manual Setup
+
+#### Prerequisites
 
 1. **Install Ollama** (for local LLM):
    - Download from [ollama.ai](https://ollama.ai)
@@ -39,7 +46,7 @@ A production-ready Retrieval-Augmented Generation (RAG) system for legal researc
 
 2. **Python 3.8+** installed
 
-### Installation
+#### Installation
 
 ```powershell
 # Clone the repository
